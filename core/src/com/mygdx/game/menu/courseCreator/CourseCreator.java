@@ -506,8 +506,7 @@ public class CourseCreator implements Screen {
         stage.draw();
         if ((ballCoordinates[0]>holeCoordinates[0]+5&&ballCoordinates[0]<holeCoordinates[0]+35)&&
                 (ballCoordinates[1]>holeCoordinates[1]+5&&ballCoordinates[1]<holeCoordinates[1]+35)) {
-            //sound.play();
-            //sound = Gdx.audio.newSound(Gdx.files.internal("BallDropGame.wav"));
+            
             batch = new SpriteBatch();
             img = new Texture("YouWonMate.png");
             sprite = new Sprite(img);
