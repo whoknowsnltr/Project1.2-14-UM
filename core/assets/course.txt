@@ -1,0 +1,1 @@
+goal = (500, 300); tol = 0; start = (100, 400); g=  0.0; mu=  0.0; m=  0.0; tol=  0.0; vmax=  0.0;height=  x^4-sin(y) + 0.4x^5;

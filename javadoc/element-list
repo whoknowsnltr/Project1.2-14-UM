@@ -1,0 +1,13 @@
+com.mygdx.game
+com.mygdx.game.client
+com.mygdx.game.desktop
+com.mygdx.game.menu
+com.mygdx.game.menu.courseCreator
+com.mygdx.game.menu.courseToPlay
+com.mygdx.game.menu.velocitySetter
+com.mygdx.physics
+org.mariuszgromada.math.mxparser
+org.mariuszgromada.math.mxparser.mathcollection
+org.mariuszgromada.math.mxparser.parsertokens
+org.mariuszgromada.math.mxparser.regressiontesting
+org.mariuszgromada.math.mxparser.syntaxchecker
