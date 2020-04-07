@@ -1,4 +1,4 @@
- package com.mygdx.game.menu.courseToPlay;
+package com.mygdx.game.menu.courseToPlay;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
@@ -41,7 +41,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 
- /**
+/**
  * This class creates a course, according to a course that we made beforehand using course creator
  */
 
@@ -58,21 +58,15 @@ public class Course implements Screen {
     private TiledMap tiledMap;
     private InputProcessor processor;
     String fileName;
-    Function2d height;
     Vector2d flag;
     Vector2d start;
-    private World world;
     MyActor ball;
-    //   Game game;
-    //   EulerSolver eulerSolver;
     double stepSize;
     Vector2d velocity;
     float xCoord;
     float yCoord;
     String formula = "";
     EulerSolver eulerSolver;
-    boolean isBallShot;
-
     Game game;
     Texture texture;
     Vector2d holeCoord;
@@ -82,6 +76,9 @@ public class Course implements Screen {
     double hole_tolerance;
     double gravitationalAcceleration;
     double mass;
+    private BackgroundHeightDifference backgroundMap;
+    public static int Height = 640*2;
+    public static int Width = 640*8/3;
 
 
 
@@ -107,41 +104,40 @@ public class Course implements Screen {
         tiledMapRenderer = new OrthogonalTiledMapRenderer(tiledMap);
         ScreenViewport viewport = new ScreenViewport();
         stage = new Stage(viewport);
-        ball = new MyActor(new Texture((Gdx.files.internal("ball.png"))),false );
+        addFormula(fileName);
 
+        backgroundMap = new BackgroundHeightDifference(formula);
+        MyActor[][] sprites = backgroundMap.getSpriteMapList();
+
+        for (int i = 0; i< Width; i+=30) {
+            for (int j = 0; j < Height; j+=30) {
+                sprites[i][j].setPosition(i, j);
+                stage.addActor(sprites[i][j]);
+            }
+        }
+
+        // Adding ball to the stage
+        ball = new MyActor(new Texture((Gdx.files.internal("ball.png"))),false );
 
         // Here we read the text file with all the information about course components, and we add them
         addCourseComponents(fileName);
 
-      /*  eulerSolver = new EulerSolver(stepSize, 30, 9.81, 0.31);
-        eulerSolver.set_step_size(stepSize);
-        velocity = new Vector2d(300, 1); */
+        /**
+         * Here we define what happens when user clicks mouse on the ball
+         */
         DragListener listener = new DragListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                //  eulerSolver = new EulerSolver(stepSize, mass, gravitationalAcceleration, friction_coefficient);
-                eulerSolver = new EulerSolver(stepSize, 300, 9.81, 31);
+                // Create new euler solver with known physical constants
+                eulerSolver = new EulerSolver(stepSize, mass, gravitationalAcceleration, friction_coefficient);
                 eulerSolver.set_step_size(stepSize);
-                velocity = new Vector2d(30, 15);
-                ball.setColor(Color.CHARTREUSE);
+                // This should be user input, of the velocity, for now since user can't input anuthing, it stays for debug purposes
+                velocity = new Vector2d(300, 15);
+                // Method described at the bottom of class
                 throwBall();
-
                 return false;
             }
 
-
-
-            @Override
-            public void touchDragged(InputEvent event, float x, float y, int pointer) {
-
-                ShapeRenderer shapeRenderer = new ShapeRenderer();
-                shapeRenderer.setProjectionMatrix(camera.combined);
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                shapeRenderer.setColor(1, 1, 1, 1);
-                shapeRenderer.line(xCoord, yCoord, x, y);
-                shapeRenderer.end();
-
-            }
         };
         // }
         ball.addListener(listener);
@@ -152,6 +148,7 @@ public class Course implements Screen {
         mainTable.top();
         stage.addActor(ball);
 
+        // Add some buttons
         TextButton back = new TextButton("Back to Menu", skin);
         back.addListener(new ClickListener() {
             @Override
@@ -172,8 +169,8 @@ public class Course implements Screen {
                 PuttingCourse puttingCourse = new PuttingCourse();
                 puttingCourse.readMoves(file.getText());
                 arrayList = puttingCourse.getMove();
-           //     velocity = arrayList.get(0);
-            //    throwBall();
+                //     velocity = arrayList.get(0);
+                //    throwBall();
 
             }
 
@@ -183,9 +180,6 @@ public class Course implements Screen {
         mainTable.add(file);
         mainTable.add(moves);
         stage.addActor(mainTable);
-
-
-        //  if (!eulerSolver.isMoving){
 
 
         Gdx.input.setInputProcessor(stage);
@@ -207,10 +201,6 @@ public class Course implements Screen {
         tiledMapRenderer.render();
         stage.act(Gdx.graphics.getDeltaTime());
 
-
-
-
-        //    ball.moveBy(1f, 0);
         stage.draw();
 
     }
@@ -289,7 +279,7 @@ public class Course implements Screen {
                         String s = splited[i].substring(1, splited[i].length()-1);
                         i++;
                         String p = splited[i].substring(0, splited[i].length()-2);
-                       start = new Vector2d(Double.parseDouble(s), Double.parseDouble(p));
+                        start = new Vector2d(Double.parseDouble(s), Double.parseDouble(p));
                         ball.setPosition((float)start.get_x(), (float)start.get_y());
                         ballCoord = new Vector2d((float)start.get_x(), (float)start.get_y());
                         stage.addActor(ball);
@@ -339,13 +329,30 @@ public class Course implements Screen {
                         stage.addActor(actor);
 
                     }
+                }
+            }
+            br.close();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+    public void addFormula(String name) {
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(name));
+            String st = "";
+
+
+            while ((st = br.readLine()) != null) {
+                String[] splited = st.split("\\s+");
+                for (int i = 0; i < splited.length; i++) {
                     if (splited[i].equals("height")) {
                         i+=2;
                         for (int j = i; j<splited.length; j++){
                             formula+=splited[j];
                             formula+=" ";
                         }
-                        formula = formula.substring(0, formula.length()-1);
+                        formula = formula.substring(0, formula.length()-2);
                     }
                 }
             }
@@ -356,44 +363,43 @@ public class Course implements Screen {
 
     }
 
-     /**
-      * This is function to throw a ball, but it does not work - we think it has to do with the eulersolver, but we are as of now not capable of fixing it
-      */
+
+    /**
+     * This is function to throw a ball, but it does not work - we think it has to do with the eulersolver, but we are as of now not capable of
+     * fixing it
+     */
 
     public void throwBall() {
         final Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 boolean running = true;
-              //  velocity = new Vector2d(3, 3);
+                // Read the mathematical formula
                 FunctionReader reader = new FunctionReader(formula);
                 while (running) {
-                        Vector2d initialPosition = new Vector2d(ball.getXcoords(), ball.getYcoords());
-                        double angleX = reader.derivativeX(initialPosition);
-                        double angleY = reader.derivativeY(initialPosition);
-                        velocity = eulerSolver.velocity(velocity, angleX, angleY);
-                        Vector2d endPosition = eulerSolver.position(initialPosition, velocity);
-                     //  Vector2d endPosition = new Vector2d(initialPosition.get_x()+5, initialPosition.get_y()+5);
-                        MoveToAction moveAction = new MoveToAction();
-                        moveAction.setPosition((float) endPosition.get_x(), (float) endPosition.get_y());
-                        moveAction.setDuration((float) stepSize);
-                        ball.addAction(moveAction);
-                    /*    if (velocity.get_y() < 10 && velocity.get_x() < 10) {
-                            running = false;
-                        }
-
-                        if (eulerSolver.isNull) {
-                            isBallShot = false;
-                            ball.setColor(Color.BLUE);
-                            running = false;
-                        } */
-
+                    // Get initial position
+                    Vector2d initialPosition = new Vector2d(ball.getXcoords(), ball.getYcoords());
+                    // Compute angles for x and y axis
+                    double angleX = reader.derivativeX(initialPosition);
+                    double angleY = reader.derivativeY(initialPosition);
+                    // Compute velocity after a step of time
+                    velocity = eulerSolver.velocity(velocity, angleX, angleY);
+                    // Compute position after a step of time
+                    Vector2d endPosition = eulerSolver.position(initialPosition, velocity);
+                    // Create action for the ball
+                    MoveToAction moveAction = new MoveToAction();
+                    // Define where to move the ball
+                    moveAction.setPosition((float) endPosition.get_x(), (float) endPosition.get_y());
+                    // Define how long this should take (step size)
+                    moveAction.setDuration((float) stepSize);
+                    // Add action
+                    ball.addAction(moveAction);
                 }
                 try {
                     Thread.sleep(1000);
                 } catch (Exception e) {
-            }
-        }});
+                }
+            }});
         thread.start();
 
     }
