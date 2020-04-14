@@ -57,13 +57,14 @@ public class CourseCreator implements Screen {
     ArrayList<MyActor> sands = new ArrayList<>();
     ArrayList<MyActor> trees = new ArrayList<>();
     private Label label;
-    public int[] holeCoordinates = {-1,-1,-1};
-    public int[] ballCoordinates = {-2,-2,-2};
+public int[] holeCoordinates = {-20,-20,-1};
+    public int[] ballCoordinates = {-400,-400,-2};
     double friction_coefficient;
     double maximum_velocity;
     double hole_tolerance;
     double gravitationalAcceleration;
     double mass_of_ball;
+    MyActor ball = new MyActor(new Texture((Gdx.files.internal("ball.png"))), false);
 
 
 
@@ -254,7 +255,6 @@ public class CourseCreator implements Screen {
                         ballCoordinates[0] = Integer.parseInt(coordsX.getText());
                         ballCoordinates[1] = Integer.parseInt(coordsY.getText());
                         ballCoordinates[2]=holeCoordinates[2];
-                        MyActor ball = new MyActor(new Texture((Gdx.files.internal("ball.png"))), false);
                         ball.setName("hole");
                         ball.setPosition(ballCoordinates[0], ballCoordinates[1]);
                         stage.addActor(ball);
