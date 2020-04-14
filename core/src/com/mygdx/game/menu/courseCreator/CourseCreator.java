@@ -504,6 +504,13 @@ public class CourseCreator implements Screen {
         stage.act(Gdx.graphics.getDeltaTime());
 
         stage.draw();
+         if ((ballCoordinates[0]>holeCoordinates[0]-5&&ballCoordinates[0]<holeCoordinates[0]+45)&&
+                (ballCoordinates[1]>holeCoordinates[1]-5&&ballCoordinates[1]<holeCoordinates[1]+45)){
+            ballCoordinates[0]=holeCoordinates[0]+10;
+            ballCoordinates[1]=holeCoordinates[1]+10;
+            ball.setPosition(holeCoordinates[0]+10,holeCoordinates[1]+10);
+
+        }
         if ((ballCoordinates[0]>holeCoordinates[0]+5&&ballCoordinates[0]<holeCoordinates[0]+35)&&
                 (ballCoordinates[1]>holeCoordinates[1]+5&&ballCoordinates[1]<holeCoordinates[1]+35)) {
             //sound.play();
