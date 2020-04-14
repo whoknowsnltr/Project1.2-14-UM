@@ -508,7 +508,7 @@ public int[] holeCoordinates = {-20,-20,-1};
                 (ballCoordinates[1]>holeCoordinates[1]-5&&ballCoordinates[1]<holeCoordinates[1]+45)){
             ballCoordinates[0]=holeCoordinates[0]+10;
             ballCoordinates[1]=holeCoordinates[1]+10;
-            ball.setPosition(holeCoordinates[0]+10,holeCoordinates[1]+10);
+            ball.setPosition(holeCoordinates[0]+20,holeCoordinates[1]+20);
 
         }
         if ((ballCoordinates[0]>holeCoordinates[0]+5&&ballCoordinates[0]<holeCoordinates[0]+35)&&
