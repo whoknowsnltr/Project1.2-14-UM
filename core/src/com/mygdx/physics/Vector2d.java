@@ -15,4 +15,11 @@ public class Vector2d {
     }
     public double getScalar(){return Math.sqrt(x*x+y*y);
 }
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
 }
