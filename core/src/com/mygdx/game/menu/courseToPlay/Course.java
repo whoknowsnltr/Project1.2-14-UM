@@ -4,47 +4,37 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.badlogic.gdx.math.Circle;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.game.MyActor;
-import com.mygdx.game.bot.AAlgorithm.OneShootBot;
+import com.mygdx.game.bot.OneShootBot;
 import com.mygdx.game.menu.MenuScreen;
-import com.mygdx.physics.*;
+import com.mygdx.physics.EulerSolver;
+import com.mygdx.physics.FunctionReader;
+import com.mygdx.physics.PuttingCourse;
+import com.mygdx.physics.Vector2d;
 
-import javax.swing.*;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * This class creates a course, according to a course that we made beforehand using course creator
@@ -138,7 +128,7 @@ public class Course implements Screen {
 
                 final com.badlogic.gdx.scenes.scene2d.ui.Dialog dialog = new Dialog("Directions", skin, "dialog") {
                     public void result(Object obj) {
-                  //      System.out.println("result " + obj);
+                        //      System.out.println("result " + obj);
                     }
                 };
                 Table table = new Table();
@@ -213,7 +203,7 @@ public class Course implements Screen {
                                 running = false;
                             }
                             dialog.hide();
-                        ball.addAction(sequenceAction);
+                            ball.addAction(sequenceAction);
                         }
                     }
                 });
@@ -495,7 +485,7 @@ public class Course implements Screen {
         if (position.get_y() <= 0 || position.get_y() >= Height) {
             velocityAfterCollision = new Vector2d(initialVelocity.get_x(), (initialVelocity.get_y() * (-1)));
         }
-   //     System.out.println(velocityAfterCollision);
+        //     System.out.println(velocityAfterCollision);
         return velocityAfterCollision;
     }
 }
