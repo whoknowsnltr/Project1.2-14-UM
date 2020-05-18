@@ -15,3 +15,4 @@ public class Vector2d {
     }
     public double getScalar(){return Math.sqrt(x*x+y*y);
 }
+}
