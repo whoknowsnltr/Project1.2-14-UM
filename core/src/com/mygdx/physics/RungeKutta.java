@@ -15,7 +15,7 @@ public class RungeKutta implements PhysicsEngine {
             velocity = currentVelocity;
             position = currentPosition;
             acceleration = new Vector2d(0, 0);
-            Vector2d stopV = new Vector2d(0.01,0.01);
+            Vector2d velocityToStop = new Vector2d(0.01,0.01);
             boolean goOn = true;
             while(goOn) {
                 if (currentVelocity.get_x() == 0 && currentVelocity.get_y() == 0) {
@@ -26,7 +26,7 @@ public class RungeKutta implements PhysicsEngine {
                 velocity = velocityCalculator(velocity,position);
                 System.out.println("Velocity:"+velocity.getScalar());
                 System.out.println(position.toString());
-                if (velocity.getScalar() < stopV.getScalar() && acceleration.getScalar() < accelerationCalculator(position,stopV).getScalar()) {
+                if (velocity.getScalar() < velocityToStop.getScalar() && acceleration.getScalar() < accelerationCalculator(position,velocityToStop).getScalar()) {
                     goOn = false;
                 }
 
