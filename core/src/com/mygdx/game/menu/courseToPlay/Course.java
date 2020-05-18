@@ -17,29 +17,34 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
+import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.game.MyActor;
+import com.mygdx.game.bot.AAlgorithm.OneShootBot;
 import com.mygdx.game.menu.MenuScreen;
 import com.mygdx.physics.*;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * This class creates a course, according to a course that we made beforehand using course creator
@@ -60,7 +65,8 @@ public class Course implements Screen {
     String fileName;
     Vector2d flag;
     Vector2d start;
-    MyActor ball;
+    final MyActor ball = new MyActor(new Texture((Gdx.files.internal("ball.png"))), false);
+
     double stepSize;
     Vector2d velocity;
     float xCoord;
@@ -77,14 +83,12 @@ public class Course implements Screen {
     double gravitationalAcceleration;
     double mass;
     private BackgroundHeightDifference backgroundMap;
-    public static int Height = 640*2;
-    public static int Width = 640*8/3;
-
-
+    public static int Height = 640 * 2;
+    public static int Width = 640 * 8 / 3;
+    boolean running;
 
 
     /**
-     *
      * @param fileName is a name of the file in which we saved how the course should look like
      */
     public Course(String fileName) {
@@ -93,7 +97,7 @@ public class Course implements Screen {
         // Again, style for buttons etc
         atlas = new TextureAtlas("uiskin.atlas");
         skin = new Skin(Gdx.files.internal("uiskin.json"));
-        stepSize = 0.01;
+        stepSize = 0.1;
 
 
         camera = new OrthographicCamera();
@@ -106,19 +110,19 @@ public class Course implements Screen {
         stage = new Stage(viewport);
         addFormula(fileName);
 
+
         backgroundMap = new BackgroundHeightDifference(formula);
         MyActor[][] sprites = backgroundMap.getSpriteMapList();
 
-        for (int i = 0; i< Width; i+=30) {
-            for (int j = 0; j < Height; j+=30) {
+        for (int i = 0; i < Width; i += 30) {
+            for (int j = 0; j < Height; j += 30) {
                 sprites[i][j].setPosition(i, j);
                 stage.addActor(sprites[i][j]);
             }
         }
 
         // Adding ball to the stage
-        ball = new MyActor(new Texture((Gdx.files.internal("ball.png"))),false );
-
+        stage.addActor(ball);
         // Here we read the text file with all the information about course components, and we add them
         addCourseComponents(fileName);
 
@@ -127,14 +131,100 @@ public class Course implements Screen {
          */
         DragListener listener = new DragListener() {
             @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, final int button) {
                 // Create new euler solver with known physical constants
+                final Slider slider1 = new Slider(0, (int) maximum_velocity, 1, false, skin); //CHANGE THE VELOCITY HERE
+                final Slider slider2 = new Slider(0, 360, 1, false, skin);
+
+                final com.badlogic.gdx.scenes.scene2d.ui.Dialog dialog = new Dialog("Directions", skin, "dialog") {
+                    public void result(Object obj) {
+                  //      System.out.println("result " + obj);
+                    }
+                };
+                Table table = new Table();
+                table.add(new Label("Velocity (m*10/s) :", skin));
+                table.row();
+                table.add(slider1);
+                table.row();
+                table.add(new Label("Direction :", skin));
+                table.row();
+                table.add(slider2);
+                table.row();
                 eulerSolver = new EulerSolver(stepSize, mass, gravitationalAcceleration, friction_coefficient);
                 eulerSolver.set_step_size(stepSize);
-                // This should be user input, of the velocity, for now since user can't input anuthing, it stays for debug purposes
-                velocity = new Vector2d(300, 15);
-                // Method described at the bottom of class
-                throwBall();
+                TextButton button3 = new TextButton("OK", skin);
+                button3.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        double speed = slider1.getValue();
+                        double direction = (slider2.getValue() * (3.1415 / 180)); // Convert from degrees to radians
+
+                        velocity = new Vector2d((Math.sin(direction) * speed), (Math.cos(direction) * speed));
+                        running = true;
+                        Vector2d newPosition = new Vector2d(ball.getX(), ball.getY());
+                        SequenceAction sequenceAction = new SequenceAction();
+
+                        int i = 0;
+                        while (running) {
+                            i++;
+                            newPosition = throwBall(newPosition);
+                            // Move the ball every 20 steps, to prevent game from lagging
+                            if (i % 20 == 0) {
+                                Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                sequenceAction.addAction(action);
+
+                            }
+                            if (Math.abs(velocity.get_y()) < 1 && Math.abs(velocity.get_x()) < 1) {
+                                Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                sequenceAction.addAction(action);
+                                running = false;
+                            }
+
+
+                            dialog.hide();
+                        }
+                        ball.addAction(sequenceAction);
+
+                    }
+                });
+                TextButton botButton = new TextButton("Bot", skin);
+                botButton.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        OneShootBot oneShootBot = new OneShootBot(maximum_velocity,holeCoord,ballCoord,hole_tolerance,formula,eulerSolver);
+                        running = true;
+                        Vector2d newPosition = new Vector2d(ball.getX(), ball.getY());
+                        SequenceAction sequenceAction = new SequenceAction();
+                        Vector2d vector2d = new Vector2d(oneShootBot.getXVelocity(),oneShootBot.getYVelocity());
+                        velocity = oneShootBot.computeVelocity(vector2d);
+                        int i = 0;
+                        while (running) {
+                            i++;
+                            newPosition = throwBall(newPosition);
+                            // Move the ball every 20 steps, to prevent game from lagging
+                            if (i % 20 == 0) {
+                                Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                sequenceAction.addAction(action);
+
+                            }
+                            if (Math.abs(velocity.get_y()) < 1 && Math.abs(velocity.get_x()) < 1) {
+                                Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                sequenceAction.addAction(action);
+                                running = false;
+                            }
+                            dialog.hide();
+                        ball.addAction(sequenceAction);
+                        }
+                    }
+                });
+                table.add(button3);
+                table.add(botButton);
+                table.setFillParent(true);
+                dialog.add(table);
+                dialog.setPosition(ball.getX(), ball.getY());
+                stage.addActor(dialog);
+
+
                 return false;
             }
 
@@ -146,35 +236,39 @@ public class Course implements Screen {
         mainTable.setFillParent(true);
         //Set alignment of contents in the table.
         mainTable.top();
-        stage.addActor(ball);
+
 
         // Add some buttons
         TextButton back = new TextButton("Back to Menu", skin);
-        back.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                ((Game) Gdx.app.getApplicationListener()).setScreen(new MenuScreen(game));
+        back.addListener(new
 
-            }
+                                 ClickListener() {
+                                     @Override
+                                     public void clicked(InputEvent event, float x, float y) {
+                                         ((Game) Gdx.app.getApplicationListener()).setScreen(new MenuScreen(game));
 
-        });
+                                     }
+
+                                 });
         TextButton moves = new TextButton("Moves from file: ", skin);
 
 
         final TextField file = new TextField("", skin);
-        moves.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                ArrayList<Vector2d> arrayList = new ArrayList();
-                PuttingCourse puttingCourse = new PuttingCourse();
-                puttingCourse.readMoves(file.getText());
-                arrayList = puttingCourse.getMove();
-                //     velocity = arrayList.get(0);
-                //    throwBall();
+        moves.addListener(new
 
-            }
+                                  ClickListener() {
+                                      @Override
+                                      public void clicked(InputEvent event, float x, float y) {
+                                          ArrayList<Vector2d> arrayList = new ArrayList();
+                                          PuttingCourse puttingCourse = new PuttingCourse();
+                                          puttingCourse.readMoves(file.getText());
+                                          arrayList = puttingCourse.getMove();
+                                          //     velocity = arrayList.get(0);
+                                          //    throwBall();
 
-        });
+                                      }
+
+                                  });
         mainTable.add(back);
         //  mainTable.add(moves);
         mainTable.add(file);
@@ -236,6 +330,7 @@ public class Course implements Screen {
 
     /**
      * In this method we read which components should be where on the screen and we add them
+     *
      * @param name
      */
     public void addCourseComponents(String name) {
@@ -248,52 +343,52 @@ public class Course implements Screen {
                 String[] splited = st.split("\\s+");
                 for (int i = 0; i < splited.length; i++) {
                     if (splited[i].equals("g")) {
-                        i+=2;
+                        i += 2;
                         String s = splited[i];
-                        gravitationalAcceleration = Double.parseDouble(s.substring(0, s.length()-1));
+                        gravitationalAcceleration = Double.parseDouble(s.substring(0, s.length() - 1));
                     }
                     if (splited[i].equals("m")) {
-                        i+=2;
+                        i += 2;
                         String s = splited[i];
-                        mass = Double.parseDouble(s.substring(0, s.length()-1));
+                        mass = Double.parseDouble(s.substring(0, s.length() - 1));
                     }
                     if (splited[i].equals("mu")) {
-                        i+=2;
+                        i += 2;
                         String s = splited[i];
-                        friction_coefficient = Double.parseDouble(s.substring(0, s.length()-1));
+                        friction_coefficient = Double.parseDouble(s.substring(0, s.length() - 1));
                     }
                     if (splited[i].equals("vmax")) {
-                        i+=2;
+                        i += 2;
                         String s = splited[i];
-                        maximum_velocity = Double.parseDouble(s.substring(0, s.length()-1));
+                        maximum_velocity = Double.parseDouble(s.substring(0, s.length() - 1));
                     }
                     if (splited[i].equals("tol")) {
-                        i+=2;
+                        i += 2;
                         String s = splited[i];
-                        hole_tolerance = Double.parseDouble(s.substring(0, s.length()-1));
+                        hole_tolerance = Double.parseDouble(s.substring(0, s.length() - 1));
                     }
                     if (splited[i].equals("start")) {
                   /*      MyActor actor = new MyActor(new Texture((Gdx.files.internal("ball.png"))), false);
                         actor.setName("ball"); */
-                        i+=2;
-                        String s = splited[i].substring(1, splited[i].length()-1);
+                        i += 2;
+                        String s = splited[i].substring(1, splited[i].length() - 1);
                         i++;
-                        String p = splited[i].substring(0, splited[i].length()-2);
+                        String p = splited[i].substring(0, splited[i].length() - 2);
                         start = new Vector2d(Double.parseDouble(s), Double.parseDouble(p));
-                        ball.setPosition((float)start.get_x(), (float)start.get_y());
-                        ballCoord = new Vector2d((float)start.get_x(), (float)start.get_y());
+                        ball.setPosition((float) start.get_x(), (float) start.get_y());
+                        ballCoord = new Vector2d((float) start.get_x(), (float) start.get_y());
                         stage.addActor(ball);
                     }
                     if (splited[i].equals("goal")) {
                         MyActor actor = new MyActor(new Texture((Gdx.files.internal("tree.png"))), false);
                         actor.setName("hole");
-                        i+=2;
-                        String s = splited[i].substring(1, splited[i].length()-1);
+                        i += 2;
+                        String s = splited[i].substring(1, splited[i].length() - 1);
                         i++;
-                        String p = splited[i].substring(0, splited[i].length()-2);
+                        String p = splited[i].substring(0, splited[i].length() - 2);
                         flag = new Vector2d(Double.parseDouble(s), Double.parseDouble(p));
-                        actor.setPosition((float)flag.get_x(), (float)flag.get_y());
-                        holeCoord = new Vector2d((float)flag.get_x(), (float)flag.get_y());
+                        actor.setPosition((float) flag.get_x(), (float) flag.get_y());
+                        holeCoord = new Vector2d((float) flag.get_x(), (float) flag.get_y());
                         stage.addActor(actor);
                     }
                     if (splited[i].equals("Pond")) {
@@ -337,6 +432,7 @@ public class Course implements Screen {
         }
 
     }
+
     public void addFormula(String name) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(name));
@@ -347,12 +443,12 @@ public class Course implements Screen {
                 String[] splited = st.split("\\s+");
                 for (int i = 0; i < splited.length; i++) {
                     if (splited[i].equals("height")) {
-                        i+=2;
-                        for (int j = i; j<splited.length; j++){
-                            formula+=splited[j];
-                            formula+=" ";
+                        i += 2;
+                        for (int j = i; j < splited.length; j++) {
+                            formula += splited[j];
+                            formula += " ";
                         }
-                        formula = formula.substring(0, formula.length()-2);
+                        formula = formula.substring(0, formula.length() - 2);
                     }
                 }
             }
@@ -369,40 +465,37 @@ public class Course implements Screen {
      * fixing it
      */
 
-    public void throwBall() {
-        final Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean running = true;
-                // Read the mathematical formula
-                FunctionReader reader = new FunctionReader(formula);
-                while (running) {
-                    // Get initial position
-                    Vector2d initialPosition = new Vector2d(ball.getXcoords(), ball.getYcoords());
-                    // Compute angles for x and y axis
-                    double angleX = reader.derivativeX(initialPosition);
-                    double angleY = reader.derivativeY(initialPosition);
-                    // Compute velocity after a step of time
-                    velocity = eulerSolver.velocity(velocity, angleX, angleY);
-                    // Compute position after a step of time
-                    Vector2d endPosition = eulerSolver.position(initialPosition, velocity);
-                    // Create action for the ball
-                    MoveToAction moveAction = new MoveToAction();
-                    // Define where to move the ball
-                    moveAction.setPosition((float) endPosition.get_x(), (float) endPosition.get_y());
-                    // Define how long this should take (step size)
-                    moveAction.setDuration((float) stepSize);
-                    // Add action
-                    ball.addAction(moveAction);
-                }
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception e) {
-                }
-            }});
-        thread.start();
-
+    public Vector2d throwBall(Vector2d initialPosition) {
+        // Read the mathematical formula
+        FunctionReader reader = new FunctionReader(formula);
+        // Get initial position
+        // Compute angles for x and y axis
+        double angleX = reader.derivativeX(initialPosition);
+        double angleY = reader.derivativeY(initialPosition);
+        // Compute velocity after a step of time
+        Vector2d vector2d = hitWall(velocity, initialPosition);
+        velocity = eulerSolver.velocity(vector2d, angleX, angleY);
+        // Compute position after a step of time
+        Vector2d endPosition = eulerSolver.position(initialPosition, velocity);
+        return endPosition;
     }
 
-
+    /**
+     * Method that defines what the ball does after collision with a wall
+     *
+     * @param initialVelocity
+     * @return
+     */
+    public Vector2d hitWall(Vector2d initialVelocity, Vector2d position) {
+        Vector2d velocityAfterCollision = new Vector2d(initialVelocity.get_x(),initialVelocity.get_y());
+        // Check which wall did the ball hit
+        if (position.get_x() <= 0 || position.get_x() >= Width) {
+            velocityAfterCollision = new Vector2d((initialVelocity.get_x() * (-1)), initialVelocity.get_y());
+        }
+        if (position.get_y() <= 0 || position.get_y() >= Height) {
+            velocityAfterCollision = new Vector2d(initialVelocity.get_x(), (initialVelocity.get_y() * (-1)));
+        }
+   //     System.out.println(velocityAfterCollision);
+        return velocityAfterCollision;
+    }
 }
