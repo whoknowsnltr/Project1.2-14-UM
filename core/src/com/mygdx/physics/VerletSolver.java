@@ -53,23 +53,18 @@ public class VerletSolver {
         previousAcceleration = new Vector2d(0,0);
         acceleration = new Vector2d(0,0);
         Vector2d velocityToStop = new Vector2d(0.01,0.01);
-        boolean cont = true;
-        while(cont){
+        boolean goOn = true;
+        while(goOn){
             Vector2d tempAcc = acceleration;
             acceleration = accelerationCalculator(velocity);
             previousAcceleration = tempAcc;
             Vector2d prePos=position;
             position = verletPlacementCalculator();
-            //double xMove=position.x-prePos.x;
-            //double yMove=position.y-prePos.y;
-
-            //ball.moveBy((float)xMove,(float)yMove);
-            //System.out.println(position.toString());
             System.out.println(" ");
             System.out.println("VELOCITY:"+velocity.getScalar());
             velocity =  velocityCalculator();
             if(velocity.getScalar()<velocityToStop.getScalar() && acceleration.getScalar()< accelerationCalculator(velocityToStop).getScalar()){
-                cont = false;
+                goOn = false;
             }
         }
     }
