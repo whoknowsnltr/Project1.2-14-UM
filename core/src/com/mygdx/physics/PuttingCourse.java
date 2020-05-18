@@ -21,6 +21,7 @@ public class PuttingCourse implements Function2d {
     double hole_tolerance;
     double gravitationalAcceleration;
     double mass;
+    double gravity=9.8;
     public String formula="";
     public PuttingCourse(Function2d height, Vector2d flag, Vector2d start, String formula, double friction_coefficient, double maximum_velocity, double hole_tolerance, double
                          gravitationalAcceleration, double mass){
@@ -72,6 +73,7 @@ public class PuttingCourse implements Function2d {
       //  ...
         return null;
     }
+    public double get_gravity(){return gravity;}
     public void readFile(String name) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(name));
