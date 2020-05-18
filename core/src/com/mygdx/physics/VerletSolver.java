@@ -62,6 +62,8 @@ public class VerletSolver {
             position = verletPlacementCalculator();
             System.out.println(" ");
             System.out.println("VELOCITY:"+velocity.getScalar());
+            System.out.println(" ");
+            System.out.println(position.toString());
             velocity =  velocityCalculator();
             if(velocity.getScalar()<velocityToStop.getScalar() && acceleration.getScalar()< accelerationCalculator(velocityToStop).getScalar()){
                 goOn = false;
