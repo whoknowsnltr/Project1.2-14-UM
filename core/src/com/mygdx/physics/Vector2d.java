@@ -13,5 +13,5 @@ public class Vector2d {
     public double get_y(){
         return y;
     }
-    public double get_scalar(){return Math.sqrt(x*x+y*y);
+    public double getScalar(){return Math.sqrt(x*x+y*y);
 }
