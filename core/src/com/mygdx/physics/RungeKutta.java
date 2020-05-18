@@ -23,11 +23,9 @@ public class RungeKutta implements PhysicsEngine {
                 }
                 acceleration = accelerationCalculator(position, velocity);
                 position = rungePlacementCalculator(position,velocity);
-//                this.kuttaSeries.add(position.get_x(),position.get_y());
                 velocity = velocityCalculator(velocity,position);
-               // System.out.println(position.toString());
-
                 System.out.println("Velocity:"+velocity.getScalar());
+                System.out.println(position.toString());
                 if (velocity.getScalar() < stopV.getScalar() && acceleration.getScalar() < accelerationCalculator(position,stopV).getScalar()) {
                     goOn = false;
                 }
