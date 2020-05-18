@@ -48,18 +48,18 @@ public class RungeKutta implements PhysicsEngine {
         return new Vector2d(velocity.get_x(),velocity.get_y());
     }
     public Vector2d rungePlacementCalculator(Vector2d position, Vector2d velocity){
-        double sX = position.get_x()+stepSize*velocity.get_x();
-        double sY = position.get_y()+stepSize*velocity.get_y();
-        return new Vector2d(sX,sY);
+        double X = position.get_x()+stepSize*velocity.get_x();
+        double Y = position.get_y()+stepSize*velocity.get_y();
+        return new Vector2d(X,Y);
     }
     public Vector2d accelerationCalculator(Vector2d position, Vector2d velocity){
-        double aX ,aY;
+        double acX ,acY;
         double mu = puttingCourse.get_friction_coefficient();
         double g = puttingCourse.get_gravity();
         Vector2d gradient1 = puttingCourse.get_height().gradient(position);
-        aX = (-g*(gradient1.get_x())) - (mu*g*velocity.get_x()/velocity.getScalar());
-        aY = (-g*(gradient1.get_y())) - (mu*g*velocity.get_y()/velocity.getScalar());
-        return new Vector2d(aX,aY);
+        acX = (-g*(gradient1.get_x())) - (mu*g*velocity.get_x()/velocity.getScalar());
+        acY = (-g*(gradient1.get_y())) - (mu*g*velocity.get_y()/velocity.getScalar());
+        return new Vector2d(acX,acY);
     }
     @Override
     public Vector2d gravityForce(double gravityConstant) {
