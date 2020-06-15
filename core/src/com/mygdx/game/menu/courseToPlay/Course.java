@@ -177,16 +177,22 @@ public class Course implements Screen {
 
                     }
                 });
-                TextButton botButton = new TextButton("Bot", skin);
+                TextButton botButton = new TextButton("One Shoot Bot", skin);
                 botButton.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        OneShootBot oneShootBot = new OneShootBot(maximum_velocity,holeCoord,ballCoord,hole_tolerance,formula,eulerSolver);
+                        Node ballCoords = new Node(new Node(), (int)ball.getX(), (int)ball.getY(), 0, 0);
+                        Node holeCoords = new Node(new Node(), (int)holeCoord.get_x(), (int)holeCoord.get_y(), 0, 0);
+                        OneShootBot oneShootBot = new OneShootBot(maximum_velocity,ballCoords,holeCoords,hole_tolerance,formula,eulerSolver);
+                        running = true;
+
+                        Vector2d vector2d = oneShootBot.computeVelocity(0.1);
+                        System.out.println("baal coords " + ball.getX() + "  " + ball.getY()  );
+                        velocity = new Vector2d(vector2d.get_x(), vector2d.get_y());
                         running = true;
                         Vector2d newPosition = new Vector2d(ball.getX(), ball.getY());
                         SequenceAction sequenceAction = new SequenceAction();
-                        Vector2d vector2d = new Vector2d(oneShootBot.getXVelocity(),oneShootBot.getYVelocity());
-                        velocity = oneShootBot.computeVelocity(vector2d);
+
                         int i = 0;
                         while (running) {
                             i++;
@@ -202,9 +208,12 @@ public class Course implements Screen {
                                 sequenceAction.addAction(action);
                                 running = false;
                             }
+
+
                             dialog.hide();
-                            ball.addAction(sequenceAction);
                         }
+                        ball.addAction(sequenceAction);
+
                     }
                 });
                 table.add(button3);
