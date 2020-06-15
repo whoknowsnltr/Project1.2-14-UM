@@ -1,6 +1,6 @@
 package com.mygdx.physics;
 
-public class Vector2d {
+public class Vector2d implements TerrainCoordinate {
     double x;
     double y;
     public Vector2d(double x, double y){
