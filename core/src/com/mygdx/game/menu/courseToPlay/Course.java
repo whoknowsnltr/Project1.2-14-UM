@@ -28,6 +28,7 @@ import com.mygdx.game.MyActor;
 import com.mygdx.game.bot.AStarBot;
 import com.mygdx.game.bot.Node;
 import com.mygdx.game.bot.OneShootBot;
+import com.mygdx.game.gameAdditions.Wind;
 import com.mygdx.game.menu.MenuScreen;
 import com.mygdx.physics.EulerSolver;
 import com.mygdx.physics.FunctionReader;
@@ -488,6 +489,9 @@ public class Course implements Screen {
         // Compute angles for x and y axis
         double angleX = reader.derivativeX(initialPosition);
         double angleY = reader.derivativeY(initialPosition);
+        // Handle wind
+        Wind wind = new Wind(velocity,0.05);
+        velocity=wind.applyWindToVelocity();
         // Compute velocity after a step of time
         Vector2d vector2d = hitWall(velocity, initialPosition);
         velocity = eulerSolver.velocity(vector2d, angleX, angleY);
