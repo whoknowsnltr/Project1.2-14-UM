@@ -27,7 +27,7 @@ public class LineFinder {
      * @return index of the last node that is in straight line with the initial index node
      */
     int getSetOfPointsInOneLine(int index){
-     //   System.out.println("===START===" + index);
+        //   System.out.println("===START===" + index);
         Node firstNode = pathPoints.get(index);
         if (index<pathPoints.size()-1){
             index++;
@@ -39,17 +39,17 @@ public class LineFinder {
 
             while ((index<pathPoints.size()-1 && lineCoefficients[0] == a && lineCoefficients[1] == b && lineCoefficients[2] == c ) ||
                     (index<pathPoints.size()-1 && lineCoefficients[2] == c && c!=-1)) {
-             //   System.out.println("TO COMPARE: " + a + " " + b + " " + c);
-               // System.out.println("current:    " + lineCoefficients[0] + " " + lineCoefficients[1] + " " + lineCoefficients[2]);
+                //   System.out.println("TO COMPARE: " + a + " " + b + " " + c);
+                // System.out.println("current:    " + lineCoefficients[0] + " " + lineCoefficients[1] + " " + lineCoefficients[2]);
                 //index++;
                 Node nodeOne = pathPoints.get(index);
-                    Node nodeTwo = pathPoints.get(index+1);
-                    index++;
-                    lineCoefficients = lineEquationGetter(nodeOne,nodeTwo);
+                Node nodeTwo = pathPoints.get(index+1);
+                index++;
+                lineCoefficients = lineEquationGetter(nodeOne,nodeTwo);
                 //lineCoefficients = lineEquationGetter(nodeOne,nodeOne);
             }
         }
-       // System.out.println("===END===" + index);
+        // System.out.println("===END===" + index);
         return index;
     }
 
@@ -112,7 +112,7 @@ public class LineFinder {
             endOfLine = getSetOfPointsInOneLine(index);
             index=endOfLine;
             pointsToLines.add(index);
-      //      System.out.println(index);
+            System.out.println(index);
         }
     }
 
@@ -133,7 +133,7 @@ public class LineFinder {
     public String toString(){
         String result = "";
         for (Integer i : pointsToLines){
-     //       System.out.println(i);
+            System.out.println(i);
             result += ("(" + pathPoints.get(i).x + ", " + pathPoints.get(i).y + "), ");
         }
         return result;

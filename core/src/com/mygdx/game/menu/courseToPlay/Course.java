@@ -25,6 +25,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.game.MyActor;
+import com.mygdx.game.bot.AStarBot;
+import com.mygdx.game.bot.Node;
 import com.mygdx.game.bot.OneShootBot;
 import com.mygdx.game.menu.MenuScreen;
 import com.mygdx.physics.EulerSolver;
@@ -177,47 +179,62 @@ public class Course implements Screen {
 
                     }
                 });
-                TextButton botButton = new TextButton("One Shoot Bot", skin);
-                botButton.addListener(new ClickListener() {
+                TextButton aBotButton = new TextButton("A* Bot", skin);
+                aBotButton.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        Node ballCoords = new Node(new Node(), (int)ball.getX(), (int)ball.getY(), 0, 0);
-                        Node holeCoords = new Node(new Node(), (int)holeCoord.get_x(), (int)holeCoord.get_y(), 0, 0);
-                        OneShootBot oneShootBot = new OneShootBot(maximum_velocity,ballCoords,holeCoords,hole_tolerance,formula,eulerSolver);
+                        System.out.println("L>OG -1");
+                        Node ballCoords = new Node(new Node(), (int) ball.getX(), (int) ball.getY(), 0, 0);
+                        Node holeCoords = new Node(new Node(), (int) holeCoord.get_x(), (int) holeCoord.get_y(), 0, 0);
+                        System.out.println("L>OG 0 " + holeCoord.get_x());
+                        AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, 100);
+                        System.out.println("L>OG 1");
+                        ArrayList<Vector2d> moves = aStarBot.appliedBots(ballCoords, holeCoords);
+                        double x1 =moves.get(moves.size()-1).get_x();
+                        double y1 =moves.get(moves.size()-1).get_y();
+                        double ratio = x1/y1;
+                        if (ratio<0){
+                            ratio=y1/x1;
+                        }
+                        moves.get(moves.size()-1).setX(x1*ratio*(1+hole_tolerance/200));
+                        moves.get(moves.size()-1).setY(y1*ratio*(1+hole_tolerance/200));
+                        System.out.println("L>OG 2");
                         running = true;
-
-                        Vector2d vector2d = oneShootBot.computeVelocity(0.1);
-                        System.out.println("baal coords " + ball.getX() + "  " + ball.getY()  );
-                        velocity = new Vector2d(vector2d.get_x(), vector2d.get_y());
-                        running = true;
-                        Vector2d newPosition = new Vector2d(ball.getX(), ball.getY());
                         SequenceAction sequenceAction = new SequenceAction();
+                        Vector2d newPosition = new Vector2d(ball.getX(), ball.getY());
+                        for (Vector2d vector2d : moves) {
+                            velocity = new Vector2d(vector2d.get_x(), vector2d.get_y());
+                            running = true;
+                            // newPosition = new Vector2d(ball.getX(), ball.getY());
 
-                        int i = 0;
-                        while (running) {
-                            i++;
-                            newPosition = throwBall(newPosition);
-                            // Move the ball every 20 steps, to prevent game from lagging
-                            if (i % 20 == 0) {
-                                Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
-                                sequenceAction.addAction(action);
 
-                            }
-                            if (Math.abs(velocity.get_y()) < 1 && Math.abs(velocity.get_x()) < 1) {
-                                Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
-                                sequenceAction.addAction(action);
-                                running = false;
+                            int i = 0;
+                            while (running) {
+                                i++;
+                                newPosition = throwBall(newPosition);
+                                // Move the ball every 20 steps, to prevent game from lagging
+                                if (i % 20 == 0) {
+                                    Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                    sequenceAction.addAction(action);
+
+                                }
+                                if (Math.abs(velocity.get_y()) < 1 && Math.abs(velocity.get_x()) < 1) {
+                                    Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                    sequenceAction.addAction(action);
+                                    running = false;
+                                }
                             }
 
 
                             dialog.hide();
+
+
                         }
                         ball.addAction(sequenceAction);
-
                     }
                 });
                 table.add(button3);
-                table.add(botButton);
+                table.add(aBotButton);
                 table.setFillParent(true);
                 dialog.add(table);
                 dialog.setPosition(ball.getX(), ball.getY());
