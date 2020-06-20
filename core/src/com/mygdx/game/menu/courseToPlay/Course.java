@@ -28,6 +28,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.game.MyActor;
 import com.mygdx.game.bot.AStarBot;
 import com.mygdx.game.bot.Node;
+import com.mygdx.game.gameAdditions.Wind;
 import com.mygdx.game.menu.MenuScreen;
 import com.mygdx.game.obstacles.Obstacles;
 import com.mygdx.physics.*;
@@ -539,6 +540,8 @@ public class Course implements Screen {
      */
 
     public Vector2d throwBall(Vector2d initialPosition) {
+        Wind wind = new Wind(velocity, 0.1);
+        velocity = new Vector2d(wind.applyWindToVelocity().get_x(), wind.applyWindToVelocity().get_y());
         double friction = differentFriction();
         // Read the mathematical formula
         FunctionReader reader = new FunctionReader(formula);
