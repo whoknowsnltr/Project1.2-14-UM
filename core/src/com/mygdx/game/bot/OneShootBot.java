@@ -14,18 +14,22 @@ public class OneShootBot {
     private Node startingPoint;
     private double holeTolerance;
     private String formula;
-    private EulerSolver eulerSolver;
     private Vector2d velocity;
     private Vector2d foundVelocity;
     private double constant;
+    double[][]friction;
+    double step_size, mass, gravityConstant;
 
-    public OneShootBot(double maxVelocity, Node startingPoint, Node finalPoint, double holeTolerance, String formula, EulerSolver eulerSolver) {
+    public OneShootBot(double maxVelocity, Node startingPoint, Node finalPoint, double holeTolerance, String formula,  double[][]friction,double step_size, double mass, double gravityConstant) {
         this.maxVelocity = maxVelocity;
         this.finalPoint = finalPoint;
         this.startingPoint = startingPoint;
         this.holeTolerance = holeTolerance;
         this.formula = formula;
-        this.eulerSolver = eulerSolver;
+        this.friction=friction;
+        this.step_size=step_size;
+        this.gravityConstant=gravityConstant;
+        this.mass=mass;
         velocity = new Vector2d(getXVelocity(1), getYVelocity(1));
     }
     /**
@@ -93,14 +97,14 @@ public class OneShootBot {
             }
             if (distanceBetweenEndBallPositionAndHole < 100) {
                 // If the hole is near the hole tolerance area, be more precise with velocity
-                constant = distanceBetweenEndBallPositionAndHole / 5000;
-            }
-            if (distanceBetweenEndBallPositionAndHole < 2*holeTolerance && holeTolerance*2<100) {
-                // If the hole is near the hole tolerance area, be more precise with velocity
                 constant = distanceBetweenEndBallPositionAndHole / 10000;
             }
-            if (distanceBetweenEndBallPositionAndHole<60){
+            if (distanceBetweenEndBallPositionAndHole < 2*holeTolerance ) {
+                // If the hole is near the hole tolerance area, be more precise with velocity
                 constant = distanceBetweenEndBallPositionAndHole / 20000;
+            }
+            if (distanceBetweenEndBallPositionAndHole<60){
+                constant = distanceBetweenEndBallPositionAndHole / 30000;
 
             } else{
                 constant = distanceBetweenEndBallPositionAndHole / 500;
@@ -143,6 +147,8 @@ public class OneShootBot {
         // Compute angles for x and y axis
         double angleX = reader.derivativeX(initialPosition);
         double angleY = reader.derivativeY(initialPosition);
+        double frictionValue = friction[(int) initialPosition.get_x()][(int) initialPosition.get_y()];
+        EulerSolver eulerSolver = new EulerSolver(step_size, mass,gravityConstant,frictionValue);
         // Compute velocity after a step of time
         Vector2d vector2d = hitWall(velocity, initialPosition);
         velocity = eulerSolver.velocity(vector2d, angleX, angleY);
