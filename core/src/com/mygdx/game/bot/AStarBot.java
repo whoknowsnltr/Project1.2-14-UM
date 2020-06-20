@@ -14,13 +14,19 @@ public class AStarBot {
     private String formula;
     private EulerSolver eulerSolver;
     private int partition;
+    double[][]friction;
+    double step_size, mass, gravityConstant;
 
-    public AStarBot(double maxVelocity, String formula, EulerSolver eulerSolver, double tolerance, int partition){
+    public AStarBot(double maxVelocity, String formula, EulerSolver eulerSolver, double tolerance, int partition, double[][]friction,double step_size, double mass, double gravityConstant){
         this.maxVelocity=maxVelocity;
         this.formula=formula;
         this.eulerSolver=eulerSolver;
         this.tolerance=tolerance;
         this.partition=partition;
+        this.friction=friction;
+        this.step_size=step_size;
+        this.gravityConstant=gravityConstant;
+        this.mass=mass;
     }
 
     /**
@@ -57,10 +63,10 @@ public class AStarBot {
             Node second = new Node(new Node(), (int)foundNodes.get(i).get_x()*partition,(int)foundNodes.get(i).get_y()*partition,foundNodes.get(i).g, foundNodes.get(i).h);
             OneShootBot oneShootBot;
             if (second.get_x() == holeNode.get_x() && second.get_y() == holeNode.get_y()) {
-                oneShootBot = new OneShootBot(maxVelocity, first, second, tolerance, formula, eulerSolver);
+                oneShootBot = new OneShootBot(maxVelocity, first, second, tolerance, formula,  friction, step_size, mass, gravityConstant);
             }
             else{
-                oneShootBot = new OneShootBot(maxVelocity, first, second, 60, formula, eulerSolver);
+                oneShootBot = new OneShootBot(maxVelocity, first, second, 60, formula, friction, step_size, mass, gravityConstant);
             }
             System.out.println( "NODE TO: " + second.get_x()+ "   " + second.get_y());
             System.out.println("----------ROUND " + i + "----------"  );
@@ -91,10 +97,10 @@ public class AStarBot {
             Node second = new Node(new Node(), (int)foundNodes.get(i).get_x()*partition,(int)foundNodes.get(i).get_y()*partition,foundNodes.get(i).g, foundNodes.get(i).h);
             OneShootBot oneShootBot;
             if (second.get_x() == holeNode.get_x() && second.get_y() == holeNode.get_y()) {
-                oneShootBot = new OneShootBot(maxVelocity, first, second, tolerance, formula, eulerSolver);
+                oneShootBot = new OneShootBot(maxVelocity, first, second, tolerance, formula, friction, step_size, mass, gravityConstant);
             }
             else{
-                oneShootBot = new OneShootBot(maxVelocity, first, second, 60, formula, eulerSolver);
+                oneShootBot = new OneShootBot(maxVelocity, first, second, 60, formula, friction, step_size, mass, gravityConstant);
             }
 
             Vector2d vector2d = oneShootBot.computeVelocity();
