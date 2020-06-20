@@ -28,6 +28,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.game.MyActor;
 import com.mygdx.game.bot.AStarBot;
 import com.mygdx.game.bot.Node;
+import com.mygdx.game.gameAdditions.DifferentFriction;
 import com.mygdx.game.gameAdditions.Wind;
 import com.mygdx.game.menu.MenuScreen;
 import com.mygdx.game.obstacles.Obstacles;
@@ -77,6 +78,7 @@ public class Course implements Screen {
     public static int Height = 640 * 2;
     public static int Width = 640 * 8 / 3;
     boolean running;
+    double[][] friction = new double[Width][Height];
 
 
     /**
@@ -196,7 +198,7 @@ public class Course implements Screen {
                             // Create new A* algorithm for each shoot to minimize error
 
                             Node holeCoords = new Node(new Node(), (int) holeCoord.get_x(), (int) holeCoord.get_y(), 0, 0);
-                            AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, partition);
+                            AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, partition, friction, stepSize, mass, gravitationalAcceleration);
                             aStarBot.setNodes(setTerrain(partition));
                             System.out.println( "LOG 2");
                             Vector2d move = aStarBot.appliedBots(ballCoords, holeCoords);
@@ -240,7 +242,7 @@ public class Course implements Screen {
                         Node ballCoords = new Node(new Node(), (int) ball.getX(), (int) ball.getY(), 0, 0);
                         Node holeCoords = new Node(new Node(), (int) holeCoord.get_x(), (int) holeCoord.get_y(), 0, 0);
                         System.out.println("L>OG 0 " + holeCoord.get_x());
-                        AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, partition);
+                        AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, partition, friction, stepSize, mass, gravitationalAcceleration);
                         aStarBot.setNodes(setTerrain(partition));
                         System.out.println("L>OG 1");
                         ArrayList<Vector2d> moves = aStarBot.appliedBotsHuman(ballCoords, holeCoords);
@@ -542,7 +544,7 @@ public class Course implements Screen {
     public Vector2d throwBall(Vector2d initialPosition) {
         Wind wind = new Wind(velocity, 0.1);
         velocity = new Vector2d(wind.applyWindToVelocity().get_x(), wind.applyWindToVelocity().get_y());
-        double friction = differentFriction();
+        double frictionValue = friction[(int) initialPosition.get_x()][(int) initialPosition.get_y()];
         // Read the mathematical formula
         FunctionReader reader = new FunctionReader(formula);
         // Get initial position
@@ -557,7 +559,7 @@ public class Course implements Screen {
             if (obstacleVector.get_x() == 9999) {
             } else if (obstacleVector.get_y() == 9999) {
                 // System.out.println(obstacle.toString());
-                friction = obstacleVector.get_x();
+                frictionValue = obstacleVector.get_x();
             } else {
                 velocity = new Vector2d(obstacleVector.get_x(), obstacleVector.get_y());
                 if (obstacle.getName().equals("pond")) {
@@ -570,7 +572,7 @@ public class Course implements Screen {
 
         // Compute velocity after a step of time
         Vector2d vector2d = hitWall(velocity, initialPosition);
-        EulerSolver eulerSolver1 = new EulerSolver(stepSize, mass, gravitationalAcceleration, friction);
+        EulerSolver eulerSolver1 = new EulerSolver(stepSize, mass, gravitationalAcceleration, frictionValue);
         velocity = eulerSolver1.velocity(vector2d, angleX, angleY);
         // Compute position after a step of time
         endPosition = eulerSolver1.position(initialPosition, velocity);
@@ -639,21 +641,11 @@ public class Course implements Screen {
     }
 
     /**
-     * Method that changes with a some probability the friction coefficient of terrain
-     * @return - new friction coefficient
+     * Method that saves different friction values
      */
-    public double differentFriction(){
-        double chances = Math.random();
-        double result=friction_coefficient;
-        if (chances<0.3){
-            result=friction_coefficient+Math.random()/2;
-        }
-        if (chances<0.15){
-            result=friction_coefficient-Math.random()/2;
-            if (result<0){
-                result=0;
-            }
-        }
-        return result;
+    void setFriction(){
+        DifferentFriction differentFriction = new DifferentFriction(friction_coefficient);
+        differentFriction.setFrictionValues(0.2);
+        friction=differentFriction.getFrictionValues();
     }
 }
