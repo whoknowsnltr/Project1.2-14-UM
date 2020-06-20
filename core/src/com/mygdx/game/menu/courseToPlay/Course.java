@@ -4,9 +4,7 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -20,6 +18,9 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragListener;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -27,14 +28,11 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.game.MyActor;
 import com.mygdx.game.bot.AStarBot;
 import com.mygdx.game.bot.Node;
-import com.mygdx.game.bot.OneShootBot;
-import com.mygdx.game.gameAdditions.Wind;
 import com.mygdx.game.menu.MenuScreen;
-import com.mygdx.physics.EulerSolver;
-import com.mygdx.physics.FunctionReader;
-import com.mygdx.physics.PuttingCourse;
-import com.mygdx.physics.Vector2d;
+import com.mygdx.game.obstacles.Obstacles;
+import com.mygdx.physics.*;
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -55,11 +53,10 @@ public class Course implements Screen {
     private TiledMapRenderer tiledMapRenderer;
     private TiledMap tiledMap;
     private InputProcessor processor;
-    String fileName;
     Vector2d flag;
     Vector2d start;
     final MyActor ball = new MyActor(new Texture((Gdx.files.internal("ball.png"))), false);
-
+    ArrayList<Obstacles> obstacles = new ArrayList<>();
     double stepSize;
     Vector2d velocity;
     float xCoord;
@@ -113,11 +110,11 @@ public class Course implements Screen {
                 stage.addActor(sprites[i][j]);
             }
         }
-
-        // Adding ball to the stage
-        stage.addActor(ball);
         // Here we read the text file with all the information about course components, and we add them
         addCourseComponents(fileName);
+        // Adding ball to the stage
+        stage.addActor(ball);
+
 
         /**
          * Here we define what happens when user clicks mouse on the ball
@@ -131,10 +128,13 @@ public class Course implements Screen {
 
                 final com.badlogic.gdx.scenes.scene2d.ui.Dialog dialog = new Dialog("Directions", skin, "dialog") {
                     public void result(Object obj) {
-                        //      System.out.println("result " + obj);
                     }
                 };
+                dialog.setHeight(250);
+                dialog.setWidth(370);
+
                 Table table = new Table();
+                table.setPosition(0, 0);
                 table.add(new Label("Velocity (m*10/s) :", skin));
                 table.row();
                 table.add(slider1);
@@ -180,17 +180,69 @@ public class Course implements Screen {
 
                     }
                 });
-                TextButton aBotButton = new TextButton("A* Bot", skin);
+                TextButton botButton = new TextButton("A* Bot", skin);
+                botButton.addListener(new ClickListener() {
+                    @Override
+                    public void clicked(InputEvent event, float x, float y) {
+                        int partition=30;
+                        setTerrain(partition);
+                        SequenceAction sequenceAction = new SequenceAction();
+                        double distanceBallHole = Math.sqrt((ballCoord.get_x() - holeCoord.get_x()) * (ballCoord.get_x() - holeCoord.get_x()) + ((ballCoord.get_y() - holeCoord.get_y()) * (ballCoord.get_y() - holeCoord.get_y())));
+                        Node ballCoords = new Node(new Node(), (int) ball.getX(), (int) ball.getY(), 0, 0);
+                        Vector2d newPosition = new Vector2d(ball.getX(), ball.getY());
+                        System.out.println( "LOG 1");
+                        while (distanceBallHole > hole_tolerance) {
+                            // Create new A* algorithm for each shoot to minimize error
+
+                            Node holeCoords = new Node(new Node(), (int) holeCoord.get_x(), (int) holeCoord.get_y(), 0, 0);
+                            AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, partition);
+                            aStarBot.setNodes(setTerrain(partition));
+                            System.out.println( "LOG 2");
+                            Vector2d move = aStarBot.appliedBots(ballCoords, holeCoords);
+                            System.out.println( "LOG 3");
+                            running = true;
+                            velocity = new Vector2d(move.get_x(), move.get_y());
+                            running = true;
+                            // newPosition = new Vector2d(ball.getX(), ball.getY());
+
+
+                            int i = 0;
+                            while (running) {
+                                i++;
+                                newPosition = throwBall(newPosition);
+                                // Move the ball every 20 steps, to prevent game from lagging
+                                if (i % 20 == 0) {
+                                    Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                    sequenceAction.addAction(action);
+
+                                }
+                                if (Math.abs(velocity.get_y()) < 1 && Math.abs(velocity.get_x()) < 1) {
+                                    Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
+                                    sequenceAction.addAction(action);
+                                    running = false;
+                                }
+                            }
+                            System.out.println("Ball after shot " + ball.getX() + " " + ball.getY());
+                            distanceBallHole = Math.sqrt((ball.getX() - holeCoord.get_x()) * (ball.getX() - holeCoord.get_x()) + ((ball.getY() - holeCoord.get_y()) * (ball.getY() - holeCoord.get_y())));
+                            ballCoords = new Node(new Node(), (int) ball.getX(), (int) ball.getY(), 0, 0);
+                            dialog.hide();
+                        }
+                        ball.addAction(sequenceAction);
+
+                    }
+                });
+                TextButton aBotButton = new TextButton("Human A* Bot", skin);
                 aBotButton.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        System.out.println("L>OG -1");
+                        int partition = 30;
                         Node ballCoords = new Node(new Node(), (int) ball.getX(), (int) ball.getY(), 0, 0);
                         Node holeCoords = new Node(new Node(), (int) holeCoord.get_x(), (int) holeCoord.get_y(), 0, 0);
                         System.out.println("L>OG 0 " + holeCoord.get_x());
-                        AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, 100);
+                        AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, partition);
+                        aStarBot.setNodes(setTerrain(partition));
                         System.out.println("L>OG 1");
-                        ArrayList<Vector2d> moves = aStarBot.appliedBots(ballCoords, holeCoords);
+                        ArrayList<Vector2d> moves = aStarBot.appliedBotsHuman(ballCoords, holeCoords);
                         double x1 =moves.get(moves.size()-1).get_x();
                         double y1 =moves.get(moves.size()-1).get_y();
                         double ratio = x1/y1;
@@ -235,8 +287,12 @@ public class Course implements Screen {
                     }
                 });
                 table.add(button3);
+                table.row();
+                table.add(botButton);
+                table.row();
                 table.add(aBotButton);
-                table.setFillParent(true);
+                //  table.setFillParent(true);
+
                 dialog.add(table);
                 dialog.setPosition(ball.getX(), ball.getY());
                 stage.addActor(dialog);
@@ -280,14 +336,11 @@ public class Course implements Screen {
                                           PuttingCourse puttingCourse = new PuttingCourse();
                                           puttingCourse.readMoves(file.getText());
                                           arrayList = puttingCourse.getMove();
-                                          //     velocity = arrayList.get(0);
-                                          //    throwBall();
 
                                       }
 
                                   });
         mainTable.add(back);
-        //  mainTable.add(moves);
         mainTable.add(file);
         mainTable.add(moves);
         stage.addActor(mainTable);
@@ -354,7 +407,7 @@ public class Course implements Screen {
         try {
             BufferedReader br = new BufferedReader(new FileReader(name));
             String st = "";
-
+            Stack stack = new Stack();
 
             while ((st = br.readLine()) != null) {
                 String[] splited = st.split("\\s+");
@@ -385,8 +438,6 @@ public class Course implements Screen {
                         hole_tolerance = Double.parseDouble(s.substring(0, s.length() - 1));
                     }
                     if (splited[i].equals("start")) {
-                  /*      MyActor actor = new MyActor(new Texture((Gdx.files.internal("ball.png"))), false);
-                        actor.setName("ball"); */
                         i += 2;
                         String s = splited[i].substring(1, splited[i].length() - 1);
                         i++;
@@ -394,10 +445,10 @@ public class Course implements Screen {
                         start = new Vector2d(Double.parseDouble(s), Double.parseDouble(p));
                         ball.setPosition((float) start.get_x(), (float) start.get_y());
                         ballCoord = new Vector2d((float) start.get_x(), (float) start.get_y());
-                        stage.addActor(ball);
+                        // stage.addActor(ball);
                     }
                     if (splited[i].equals("goal")) {
-                        MyActor actor = new MyActor(new Texture((Gdx.files.internal("tree.png"))), false);
+                        MyActor actor = new MyActor(new Texture((Gdx.files.internal("hole.png"))), false);
                         actor.setName("hole");
                         i += 2;
                         String s = splited[i].substring(1, splited[i].length() - 1);
@@ -416,6 +467,7 @@ public class Course implements Screen {
                         i++;
                         float yCoords = Float.parseFloat(splited[i]);
                         actor.setPosition(xCoords, yCoords);
+                        obstacles.add(new Obstacles(ball, actor, friction_coefficient));
                         stage.addActor(actor);
 
                     }
@@ -427,6 +479,7 @@ public class Course implements Screen {
                         i++;
                         float yCoords = Float.parseFloat(splited[i]);
                         actor.setPosition(xCoords, yCoords);
+                        obstacles.add(new Obstacles(ball, actor, friction_coefficient));
                         stage.addActor(actor);
 
                     }
@@ -438,10 +491,13 @@ public class Course implements Screen {
                         i++;
                         float yCoords = Float.parseFloat(splited[i]);
                         actor.setPosition(xCoords, yCoords);
+                        obstacles.add(new Obstacles(ball, actor, friction_coefficient));
                         stage.addActor(actor);
 
                     }
+
                 }
+                stage.addActor(ball);
             }
             br.close();
         } catch (java.io.IOException e) {
@@ -483,20 +539,38 @@ public class Course implements Screen {
      */
 
     public Vector2d throwBall(Vector2d initialPosition) {
+        double friction = differentFriction();
         // Read the mathematical formula
         FunctionReader reader = new FunctionReader(formula);
         // Get initial position
         // Compute angles for x and y axis
         double angleX = reader.derivativeX(initialPosition);
         double angleY = reader.derivativeY(initialPosition);
-        // Handle wind
-        Wind wind = new Wind(velocity,0.05);
-        velocity=wind.applyWindToVelocity();
+        Rectangle ballBounds = new Rectangle((int) initialPosition.get_x(), (int) initialPosition.get_y(), (int) ball.getWidth(), (int) ball.getHeight());
+        Vector2d endPosition;
+        //      System.out.println("THROW BALL " + ballBounds.getX() + "  " + ballBounds.getY() + " ball " + ball.getX() + " " + ball.getY() );
+        for (Obstacles obstacle : obstacles) {
+            Vector2d obstacleVector = obstacle.collisionHandler(velocity, ballBounds, new Vector2d(initialPosition.get_x(), initialPosition.get_y()));
+            if (obstacleVector.get_x() == 9999) {
+            } else if (obstacleVector.get_y() == 9999) {
+                // System.out.println(obstacle.toString());
+                friction = obstacleVector.get_x();
+            } else {
+                velocity = new Vector2d(obstacleVector.get_x(), obstacleVector.get_y());
+                if (obstacle.getName().equals("pond")) {
+                    endPosition = new Vector2d(obstacleVector.get_x(), obstacleVector.get_y());
+                    velocity = new Vector2d(0, 0);
+                    return endPosition;
+                }
+            }
+        }
+
         // Compute velocity after a step of time
         Vector2d vector2d = hitWall(velocity, initialPosition);
-        velocity = eulerSolver.velocity(vector2d, angleX, angleY);
+        EulerSolver eulerSolver1 = new EulerSolver(stepSize, mass, gravitationalAcceleration, friction);
+        velocity = eulerSolver1.velocity(vector2d, angleX, angleY);
         // Compute position after a step of time
-        Vector2d endPosition = eulerSolver.position(initialPosition, velocity);
+        endPosition = eulerSolver1.position(initialPosition, velocity);
         return endPosition;
     }
 
@@ -507,7 +581,7 @@ public class Course implements Screen {
      * @return
      */
     public Vector2d hitWall(Vector2d initialVelocity, Vector2d position) {
-        Vector2d velocityAfterCollision = new Vector2d(initialVelocity.get_x(),initialVelocity.get_y());
+        Vector2d velocityAfterCollision = new Vector2d(initialVelocity.get_x(), initialVelocity.get_y());
         // Check which wall did the ball hit
         if (position.get_x() <= 0 || position.get_x() >= Width) {
             velocityAfterCollision = new Vector2d((initialVelocity.get_x() * (-1)), initialVelocity.get_y());
@@ -517,5 +591,66 @@ public class Course implements Screen {
         }
         //     System.out.println(velocityAfterCollision);
         return velocityAfterCollision;
+    }
+
+    public double getFriction_coefficient() {
+        return friction_coefficient;
+    }
+
+    public void setFriction_coefficient(double friction_coefficient) {
+        this.friction_coefficient = friction_coefficient;
+    }
+
+    public Vector2d getVelocity() {
+        return velocity;
+    }
+
+    public void setVelocity(Vector2d velocity) {
+        this.velocity = velocity;
+    }
+
+    /**
+     * Method that sets the array that represents terrain, where pond or tree is -1, and 0 elsewhere
+     */
+    public int[][] setTerrain(double partition) {
+        int[][] terrain = new int[(int) (Width/partition)][(int) (Height/partition)];
+        for (int i = 0; i < terrain.length; i++) {
+            for (int j = 0; j < terrain[0].length; j++) {
+                terrain[i][j] = 0;
+                for (Obstacles obstacle : obstacles) {
+                    if (obstacle.getObstacleBounds().contains(i, j)) {
+                        terrain[i][j] = -1;
+                        if (i<terrain.length-1)
+                            terrain[i+1][j] = -1;
+                        if (i>0)
+                            terrain[i-1][j] = -1;
+                        if (j<terrain[0].length-1)
+                            terrain[i][j+1] = -1;
+                        if (j>0)
+                            terrain[i][j-1] = -1;
+                    }
+                }
+            }
+        }
+        return terrain;
+    }
+
+    /**
+     * Method that changes with a some probability the friction coefficient of terrain
+     * @return - new friction coefficient
+     */
+    public double differentFriction(){
+        double chances = Math.random();
+        double result=friction_coefficient;
+        if (chances<0.3){
+            result=friction_coefficient+Math.random()/2;
+        }
+        if (chances<0.15){
+            result=friction_coefficient-Math.random()/2;
+            if (result<0){
+                result=0;
+            }
+        }
+        return result;
     }
 }
