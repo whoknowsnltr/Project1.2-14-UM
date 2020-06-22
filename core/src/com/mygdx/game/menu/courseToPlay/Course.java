@@ -116,8 +116,10 @@ public class Course implements Screen {
         // Here we read the text file with all the information about course components, and we add them
         addCourseComponents(fileName);
         // Adding ball to the stage
-        stage.addActor(ball);
         setFriction();
+        stage.addActor(ball);
+
+
 
         /**
          * Here we define what happens when user clicks mouse on the ball
@@ -238,14 +240,18 @@ public class Course implements Screen {
                 aBotButton.addListener(new ClickListener() {
                     @Override
                     public void clicked(InputEvent event, float x, float y) {
-                        int partition = 30;
+                      //  System.out.println("L>OG -1");
+                        int partition = 100;
                         Node ballCoords = new Node(new Node(), (int) ball.getX(), (int) ball.getY(), 0, 0);
                         Node holeCoords = new Node(new Node(), (int) holeCoord.get_x(), (int) holeCoord.get_y(), 0, 0);
-                        System.out.println("L>OG 0 " + holeCoord.get_x());
+                       // System.out.println("L>OG 0 " + holeCoord.get_x());
                         AStarBot aStarBot = new AStarBot(maximum_velocity, formula, eulerSolver, hole_tolerance, partition, friction, stepSize, mass, gravitationalAcceleration);
+                        long startT = System.currentTimeMillis();
                         aStarBot.setNodes(setTerrain(partition));
-                        System.out.println("L>OG 1");
+                      //  System.out.println("L>OG 1");
                         ArrayList<Vector2d> moves = aStarBot.appliedBotsHuman(ballCoords, holeCoords);
+                        long endT = System.currentTimeMillis();
+                        System.out.print("----------------------Algorithm ran for " + ((endT - startT) / 1000.) + " seconds---------------------- ");
                         double x1 =moves.get(moves.size()-1).get_x();
                         double y1 =moves.get(moves.size()-1).get_y();
                         double ratio = x1/y1;
@@ -254,7 +260,7 @@ public class Course implements Screen {
                         }
                         moves.get(moves.size()-1).setX(x1*ratio*(1+hole_tolerance/200));
                         moves.get(moves.size()-1).setY(y1*ratio*(1+hole_tolerance/200));
-                        System.out.println("L>OG 2");
+                     //   System.out.println("L>OG 2");
                         running = true;
                         SequenceAction sequenceAction = new SequenceAction();
                         Vector2d newPosition = new Vector2d(ball.getX(), ball.getY());
@@ -262,8 +268,6 @@ public class Course implements Screen {
                             velocity = new Vector2d(vector2d.get_x(), vector2d.get_y());
                             running = true;
                             // newPosition = new Vector2d(ball.getX(), ball.getY());
-
-
                             int i = 0;
                             while (running) {
                                 i++;
@@ -272,7 +276,6 @@ public class Course implements Screen {
                                 if (i % 20 == 0) {
                                     Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
                                     sequenceAction.addAction(action);
-
                                 }
                                 if (Math.abs(velocity.get_y()) < 1 && Math.abs(velocity.get_x()) < 1) {
                                     Action action = Actions.moveTo((float) newPosition.get_x(), (float) newPosition.get_y(), (float) (stepSize));
@@ -280,11 +283,7 @@ public class Course implements Screen {
                                     running = false;
                                 }
                             }
-
-
                             dialog.hide();
-
-
                         }
                         ball.addAction(sequenceAction);
                     }
@@ -500,9 +499,10 @@ public class Course implements Screen {
                     }
 
                 }
-                stage.addActor(ball);
+
             }
             br.close();
+            stage.addActor(ball);
         } catch (java.io.IOException e) {
             e.printStackTrace();
         }
@@ -543,8 +543,25 @@ public class Course implements Screen {
 
     public Vector2d throwBall(Vector2d initialPosition) {
         Wind wind = new Wind(velocity, 0.1);
+
+        double initialPositionX=initialPosition.get_x();
+        double initialPositionY=initialPosition.get_y();
+        if (initialPosition.get_x()>friction.length){
+            initialPositionX = (friction.length-1);
+        }
+        if (initialPosition.get_y()>friction[0].length){
+            initialPositionY = (friction[0].length-1);
+        }
+        if (initialPosition.get_x()<0){
+            initialPositionX = (0);
+        }
+        if (initialPosition.get_y()<0){
+            initialPositionY = (0);
+        }
+        double frictionValue = friction[(int) initialPositionX][(int) initialPositionY];
         velocity = new Vector2d(wind.applyWindToVelocity().get_x(), wind.applyWindToVelocity().get_y());
-        double frictionValue = friction[(int) initialPosition.get_x()][(int) initialPosition.get_y()];
+
+       // double frictionValue = friction[(int) initialPosition.get_x()][(int) initialPosition.get_y()];
         // Read the mathematical formula
         FunctionReader reader = new FunctionReader(formula);
         // Get initial position
@@ -645,7 +662,7 @@ public class Course implements Screen {
      */
     void setFriction(){
         DifferentFriction differentFriction = new DifferentFriction(friction_coefficient);
-        differentFriction.setFrictionValues(0.2);
+        differentFriction.setFrictionValues(0.05);
         friction=differentFriction.getFrictionValues();
     }
 }
