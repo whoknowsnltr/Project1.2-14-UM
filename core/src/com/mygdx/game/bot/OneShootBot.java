@@ -147,7 +147,22 @@ public class OneShootBot {
         // Compute angles for x and y axis
         double angleX = reader.derivativeX(initialPosition);
         double angleY = reader.derivativeY(initialPosition);
-        double frictionValue = friction[(int) initialPosition.get_x()][(int) initialPosition.get_y()];
+        double initialPositionX=initialPosition.get_x();
+        double initialPositionY=initialPosition.get_y();
+        if (initialPosition.get_x()>friction.length){
+            initialPositionX = (friction.length-1);
+        }
+        if (initialPosition.get_y()>friction[0].length){
+            initialPositionY = (friction[0].length-1);
+        }
+        if (initialPosition.get_x()<0){
+            initialPositionX = (0);
+        }
+        if (initialPosition.get_y()<0){
+            initialPositionY = (0);
+        }
+        double frictionValue = friction[(int) initialPositionX][(int) initialPositionY];
+
         EulerSolver eulerSolver = new EulerSolver(step_size, mass,gravityConstant,frictionValue);
         // Compute velocity after a step of time
         Vector2d vector2d = hitWall(velocity, initialPosition);
