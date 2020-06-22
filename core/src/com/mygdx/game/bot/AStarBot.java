@@ -36,6 +36,7 @@ public class AStarBot {
      * @return an array of vectors that represent the velocity that should be applied to ball one by one
      */
     public ArrayList<Vector2d> appliedBotsHuman(Node ballNode, Node holeNode) {
+        long startT = System.currentTimeMillis();
         ArrayList<Vector2d> moves = new ArrayList<>();
         AStarAlgorithm aStarAlgorithmBot = new AStarAlgorithm(nodes,(int) ballNode.get_x()/partition, (int)ballNode.get_y()/partition,(int)holeNode.get_x()/partition, (int)holeNode.get_y()/partition);
         System.out.println("BALL " + ballNode.x + "  " + ballNode.y);
@@ -56,6 +57,8 @@ public class AStarBot {
         for (Node n : foundNodes){
             System.out.println("foundNodes[" + n.x + ", " + n.y + "] ");
         }
+        long endT = System.currentTimeMillis();
+      //  System.out.print("----------------------Algorithm ran for " + ((endT - startT) / 1000.) + " seconds---------------------- ");
         // Find and add velocities to returned list
         Node first = new Node(new Node(), (int)ballNode.get_x(),(int)ballNode.get_y(),ballNode.g, ballNode.h);
         for(int i = 0; i<foundNodes.size(); i++){
@@ -74,6 +77,8 @@ public class AStarBot {
             System.out.println("----------DONE ROUND " + i + "----------"  );
             first = new Node(new Node(), (int)foundNodes.get(i).get_x()*partition,(int)foundNodes.get(i).get_y()*partition,foundNodes.get(i).g, foundNodes.get(i).h);
         }
+
+
         return moves;
     }
     public Vector2d appliedBots(Node ballNode, Node holeNode) {
@@ -92,9 +97,14 @@ public class AStarBot {
 
         // Find and add velocities to returned list
         Node first = new Node(new Node(), (int)ballNode.get_x(),(int)ballNode.get_y(),ballNode.g, ballNode.h);
-        for(int i = 0; i<2; i++){
             System.out.println( "NODE FROM: " + first.get_x() + "   " + first.get_y());
-            Node second = new Node(new Node(), (int)foundNodes.get(i).get_x()*partition,(int)foundNodes.get(i).get_y()*partition,foundNodes.get(i).g, foundNodes.get(i).h);
+            Node second;
+            if (foundNodes.size()>2) {
+                second = new Node(new Node(), (int) foundNodes.get(1).get_x() * partition, (int) foundNodes.get(1).get_y() * partition, foundNodes.get(1).g, foundNodes.get(1).h);
+            }
+            else{
+                second = new Node(new Node(), (int) holeNode.get_x() * partition, (int)  holeNode.get_y()  * partition, foundNodes.get(1).g, foundNodes.get(1).h);
+            }
             OneShootBot oneShootBot;
             if (second.get_x() == holeNode.get_x() && second.get_y() == holeNode.get_y()) {
                 oneShootBot = new OneShootBot(maxVelocity, first, second, tolerance, formula, friction, step_size, mass, gravityConstant);
@@ -107,7 +117,6 @@ public class AStarBot {
             firstMove.setX(vector2d.get_x());
             firstMove.setY(vector2d.get_y());
 
-        }
         return firstMove;
     }
 
