@@ -117,7 +117,7 @@ public class Course implements Screen {
         addCourseComponents(fileName);
         // Adding ball to the stage
         stage.addActor(ball);
-
+        setFriction();
 
         /**
          * Here we define what happens when user clicks mouse on the ball
